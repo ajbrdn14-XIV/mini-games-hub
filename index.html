@@ -97,7 +97,7 @@
 
   <!-- Maze -->
   <section id="mazeGame" class="game-container panel">
-    <p class="title">Guide the Kitty 🐱‍👤 to the 🏁. Arrow keys or D-Pad. No traps—just walls!</p>
+    <p class="title">Guide the 🦖 to the 🏁. Arrow keys or D-Pad. No traps—just walls!</p>
     <div id="mazeWrap">
       <canvas id="mazeCanvas" width="880" height="880" aria-label="Maze canvas" role="img"></canvas>
     </div>
@@ -359,7 +359,7 @@
     // player (smooth)
     const px = player.fx*cs + cs/2;
     const py = player.fy*cs + cs/2 + (moving ? Math.sin(performance.now()/90)*cs*0.06 : 0);
-    ctx.fillText('🐱‍👤', px, py);
+    ctx.fillText('🦖', px, py);
   }
 
   function step(now){
