@@ -8,6 +8,20 @@
 <meta name="keywords" content="mini games, maze, memory game, puzzle, fun games" />
 <meta name="author" content="Your Name" />
 <style>
+  /* Intro video styles */
+  body,html{margin:0;padding:0;height:100%;overflow:hidden;}
+  #introVideoContainer{
+    position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;
+    flex-direction:column;
+  }
+  #introVideo{
+    max-width:100%;max-height:100%;
+  }
+  #skipBtn{
+    margin-top:12px;padding:10px 18px;border:none;border-radius:8px;
+    background:#d4af37;color:#fff;font-weight:bold;cursor:pointer;
+  }
+
   :root{
     --gold:#d4af37; --red:#8b0000; --cream:#fff8f0; --shadow:0 8px 22px rgba(0,0,0,.16);
     --radius:16px; --gap:12px;
@@ -75,7 +89,18 @@
 </style>
 </head>
 <body>
-  <h1>Happy babii-versary ❤️</h1>
+
+  <!-- Intro Video -->
+  <div id="introVideoContainer">
+    <video id="introVideo" autoplay controls>
+      <source src="1000044863.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+    <button id="skipBtn">Skip</button>
+  </div>
+
+  <div id="gameApp" style="display:none">
+<h1>Happy babii-versary ❤️</h1>
   <p id="subtitle">Two games, two hearts. Beat both to unlock a surprise.</p>
 
   <div id="progressTracker">Progress: Memory Match 🖤 | Maze 🖤</div>
@@ -466,5 +491,23 @@
   /* Initialize memory board */
   resetMemory();
 </script>
+</div>
+
+<script>
+  const video = document.getElementById('introVideo');
+  const container = document.getElementById('introVideoContainer');
+  const gameApp = document.getElementById('gameApp');
+  const skipBtn = document.getElementById('skipBtn');
+
+  function endIntro(){
+    container.style.display='none';
+    gameApp.style.display='block';
+    document.body.style.overflow='auto';
+  }
+
+  video.addEventListener('ended', endIntro);
+  skipBtn.addEventListener('click', endIntro);
+</script>
+
 </body>
 </html>
