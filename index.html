@@ -1,520 +1,761 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mini Games Hub</title>
-<meta name="description" content="Play fun mini games including a challenging maze and memory match!" />
-<meta name="keywords" content="mini games, maze, memory game, puzzle, fun games" />
-<meta name="author" content="Your Name" />
-<style>
-  :root{
-    --gold:#d4af37; --red:#8b0000; --cream:#fff8f0; --shadow:0 8px 22px rgba(0,0,0,.16);
-    --radius:16px; --gap:12px;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0; padding:20px; min-height:100vh;
-    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
-    background:linear-gradient(135deg, ivory,var(--red));
-    color:#2c2c2c; display:flex; flex-direction:column; align-items:center; text-align:center;
-    overflow-x:hidden;
-  }
-  h1{font-size:clamp(1.8rem,2.6rem,3rem); margin:8px 0 2px; color:var(--red); animation:fadeIn .9s ease;}
-  #subtitle{margin:0 0 12px; opacity:.85; font-size:.95rem}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Our Anniversary — Countdown & Celebration</title>
 
-  /* === Overlays === */
-  #tapOverlay, #introVideoOverlay{
-    position:fixed; inset:0; background:#000; display:flex; align-items:center; justify-content:center;
-    z-index:9999; flex-direction:column; color:white; font-size:1.2rem; text-align:center;
-  }
-  #tapOverlay button{
-    margin-top:20px; padding:12px 24px; border:none; border-radius:var(--radius);
-    background:var(--gold); color:white; font-weight:bold; cursor:pointer; box-shadow:var(--shadow); font-size:1rem;
-  }
-  #introVideoOverlay video{
-    max-width:100%; max-height:100%; object-fit:contain;
-  }
-  .fade-out{ opacity:0; transition:opacity 1s ease; pointer-events:none; }
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
-  .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-  .btn{appearance:none;border:none;border-radius:var(--radius);background:var(--gold);color:#fff;padding:12px 18px;font-weight:700;cursor:pointer;box-shadow:var(--shadow);transition:transform .12s,filter .15s}
-  .btn:hover{transform:translateY(-2px)}
-  .panel{background:rgba(255,255,255,.66);border:2px solid var(--gold);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
-  .game-container{display:none;width:min(96vw,960px);margin-top:12px}
-  .title{margin:4px 0 10px;font-weight:800;color:var(--red)}
+  <style>
+    /* ===========
+        THEME & LAYOUT
+        Dark, elegant, modern aesthetic with one accent color.
+        Replace color variables if you want a different accent.
+        =========== */
+    :root{
+      --bg:#0b0d10;          /* main background (very dark) */
+      --panel:#0f1316;        /* slightly lighter panels */
+      --muted:#9aa5b1;        /* muted text */
+      --accent:#ff6b6b;        /* accent color (replace to taste) */
+      --glass: rgba(255,255,255,0.03);
+      --radius:16px;
+      --max-width:1100px;
+      --safe-padding:20px;
+      --transition:300ms cubic-bezier(.2,.9,.23,1);
+    }
 
-  /* Memory board (5 pairs = 10 cards) */
-  #memoryBoard{display:grid;grid-template-columns:repeat(5,min(16vw,120px));gap:var(--gap);place-content:center}
-  .card{width:min(16vw,120px);height:min(16vw,120px);display:flex;align-items:center;justify-content:center;
-        font-size:clamp(1.6rem,7vw,2.4rem);background:var(--cream);border:2px solid var(--gold);border-radius:14px;cursor:pointer;user-select:none;box-shadow:0 6px 12px rgba(0,0,0,.08); transition:transform .12s}
-  .card.hidden{color:transparent}
-  .card.revealed{transform:scale(1.03)}
+    html,body{
+      height:100%;
+      margin:0;
+      font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+      background:linear-gradient(180deg,var(--bg), #060708);
+      color:#e7eef6;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
 
-  /* Maze */
-  #mazeWrap{position:relative;display:grid;place-items:center}
-  canvas#mazeCanvas{width:min(92vmin,720px);height:min(92vmin,720px);border:3px solid var(--gold);border-radius:12px;background:#fff;touch-action:none}
-  #mazeControls{margin-top:10px}
+    /* Page container */
+    .wrap{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:40px 18px;
+      box-sizing:border-box;
+    }
 
-  /* D-Pad for mobile */
-  #pad{position:fixed;right:16px;bottom:16px;display:grid;grid-template-columns:64px 64px 64px;grid-template-rows:64px 64px 64px;gap:8px;opacity:.88;z-index:30}
-  .padBtn{background:rgba(0,0,0,.35);color:#fff;border:2px solid rgba(255,255,255,.45);border-radius:16px;font-size:1.25rem;display:grid;place-items:center;backdrop-filter:blur(6px);box-shadow:0 6px 14px rgba(0,0,0,.25)}
-  .padBtn.blank{visibility:hidden}
+    .card{
+      width:100%;
+      max-width:var(--max-width);
+      background:linear-gradient(180deg,var(--panel),rgba(10,12,14,0.9));
+      border-radius:calc(var(--radius) + 4px);
+      box-shadow: 0 10px 40px rgba(2,6,10,0.7);
+      overflow:hidden;
+      position:relative;
+      border:1px solid rgba(255,255,255,0.03);
+    }
 
-  /* Hearts (fun background) */
-  .heart{position:fixed;bottom:-50px;font-size:1.6rem;color:var(--gold);opacity:.85;animation:floatUp 7s linear infinite;pointer-events:none}
-  @keyframes floatUp{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-105vh) scale(1.4);opacity:0}}
+    /* Header */
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      padding:22px 28px;
+      background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-bottom:1px solid rgba(255,255,255,0.02);
+    }
+    .brand{
+      display:flex;
+      gap:14px;
+      align-items:center;
+    }
+    .logo{
+      width:54px;height:54px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#d95d5d);
+      display:flex;align-items:center;justify-content:center;font-weight:700;
+      box-shadow:0 4px 20px rgba(255,107,107,0.12);
+      font-size:18px;
+    }
+    h1{font-size:18px;margin:0;letter-spacing:0.2px}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
 
-  /* Congrats modal */
-  .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.35);z-index:100}
-  .modal.show{display:grid;animation:fadeIn .25s}
-  .modalCard{background:#fff;border:3px solid var(--gold);border-radius:20px;padding:18px;width:min(92vw,460px);box-shadow:var(--shadow);text-align:center}
-  .modalEmoji{font-size:2.2rem}
-  .modalTitle{margin:8px 0 6px;color:var(--red);font-weight:800;font-size:1.4rem;animation:pop .6s}
-  .modalMsg{margin:0 0 12px}
-  @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+    /* Main content area */
+    .content{
+      padding:36px;
+      display:flex;
+      gap:28px;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+    }
 
-  @media(max-width:640px){
-    #memoryBoard{grid-template-columns:repeat(4,min(22vw,100px))}
-    .card{width:min(22vw,100px);height:min(22vw,100px)}
-    #pad{right:10px;bottom:10px;grid-template-columns:56px 56px 56px;grid-template-rows:56px 56px 56px;gap:6px}
-    .padBtn{border-radius:14px;font-size:1.1rem}
-  }
-</style>
+    /* COUNTDOWN - center stage */
+    .countdown-card{
+      width:100%;
+      max-width:780px;
+      text-align:center;
+      padding:28px;
+      border-radius:12px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.007));
+      border:1px solid rgba(255,255,255,0.02);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.02);
+    }
+
+    .timer{
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      margin-top:18px;
+      flex-wrap:wrap;
+    }
+
+    .time-segment{
+      background:var(--glass);
+      padding:18px 14px;
+      min-width:92px;
+      border-radius:10px;
+      box-shadow: 0 6px 22px rgba(3,5,8,0.6);
+      transition:transform var(--transition);
+    }
+    .time-segment h2{font-size:28px;margin:0;text-align:center}
+    .time-segment span{display:block;margin-top:6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+
+    .note{
+      margin-top:18px;color:var(--muted);font-size:13px;
+    }
+
+    /* Hidden sections initially (revealed sequentially) */
+    .hidden{display:none !important;opacity:0;pointer-events:none}
+
+    /* VIDEO section */
+    .video-wrap{
+      width:100%;
+      max-width:980px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      align-items:center;
+    }
+    .video-card{
+      width:100%;
+      border-radius:12px;
+      overflow:hidden;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.003));
+      border:1px solid rgba(255,255,255,0.02);
+    }
+    video{
+      width:100%;
+      height:auto;
+      display:block;
+      background:#000;
+    }
+    .video-controls-row{
+      display:flex;
+      gap:12px;
+      width:100%;
+      padding:12px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .btn{
+      border:0;
+      padding:10px 14px;
+      background:transparent;
+      color:var(--accent);
+      border-radius:10px;
+      font-weight:600;
+      cursor:pointer;
+      transition:all 180ms ease;
+    }
+    .btn.ghost{color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
+    .btn:hover{transform:translateY(-3px)}
+
+    /* MINI GAME */
+    .game-wrap{
+      width:100%;
+      max-width:980px;
+      padding:18px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.02);
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      align-items:center;
+    }
+    .instructions{
+      color:var(--muted);
+      font-size:14px;
+      text-align:center;
+      max-width:800px;
+    }
+
+    .game-area{
+      width:100%;
+      height:320px;
+      border-radius:12px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+      border:1px dashed rgba(255,255,255,0.02);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .target{
+      width:64px;height:64px;border-radius:50%;
+      position:absolute;display:flex;align-items:center;justify-content:center;
+      cursor:pointer;user-select:none;
+      font-weight:700;font-size:18px;
+      box-shadow:0 8px 30px rgba(0,0,0,0.6);
+      transform:translateZ(0);
+    }
+
+    .hud{
+      display:flex;gap:12px;align-items:center;
+      margin-top:10px;
+    }
+    .hud .pill{
+      padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.02);color:var(--muted);
+      font-weight:600;
+    }
+
+    /* QR popup / final section */
+    .qr-modal{
+      position:fixed;top:0;left:0;width:100%;height:100%;display:flex;
+      align-items:center;justify-content:center;background:rgba(2,4,6,0.6);
+      z-index:1200;padding:24px;box-sizing:border-box;
+    }
+    .qr-card{
+      background:linear-gradient(180deg,#0f1316,#08090a);
+      padding:22px;border-radius:14px;border:1px solid rgba(255,255,255,0.03);
+      max-width:420px;width:100%;text-align:center;
+    }
+    .qr-card h3{margin:8px 0 6px 0}
+    .qr-card p{color:var(--muted);margin:0 0 14px 0}
+    .qr-img{
+      display:inline-block;padding:6px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);
+    }
+    .close-x{
+      position:absolute;right:18px;top:16px;background:transparent;border:0;color:var(--muted);font-size:18px;cursor:pointer;
+    }
+
+    /* Footer */
+    footer{
+      padding:14px 24px;
+      font-size:13px;
+      color:var(--muted);
+      display:flex;align-items:center;justify-content:space-between;
+      gap:10px;border-top:1px solid rgba(255,255,255,0.02);
+    }
+
+    /* Responsive */
+    @media (max-width:700px){
+      .time-segment{min-width:72px;padding:14px 10px}
+      .card{border-radius:12px}
+      .wrap{padding:22px 14px}
+      .content{padding:22px}
+      .video-controls-row{flex-direction:column;align-items:stretch}
+      .game-area{height:260px}
+      .logo{width:46px;height:46px;font-size:16px}
+    }
+  </style>
 </head>
 <body>
-  <!-- Tap to Start overlay -->
-  <div id="tapOverlay" style="display:none;">
-    <div>💖 Tap to Start 💖</div>
-    <button id="startBtn">Start</button>
-  </div>
+  <div class="wrap">
+    <div class="card" role="main" aria-labelledby="pageTitle">
+      <header>
+        <div class="brand" aria-hidden="true">
+          <div class="logo">J♥A</div>
+          <div>
+            <h1 id="pageTitle">Our Babii-versary</h1>
+            <p class="lead">A little digital celebration — made with love.</p>
+          </div>
+        </div>
 
-  <!-- Intro video overlay (not skippable; fits screen; plays once per visit) -->
-  <div id="introVideoOverlay" style="display:none;">
-    <video id="introVideo" playsinline webkit-playsinline preload="auto">
-      <source src="1000044863.mp4" type="video/mp4">
-      Your browser does not support the video tag.
-    </video>
-  </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button class="btn ghost" id="langBtn" aria-label="Change language (placeholder)">EN</button>
+        </div>
+      </header>
 
-  <h1>Happy babii-versary❤️</h1>
-  <p id="subtitle">Two games, two hearts. Beat both to unlock a surprise.</p>
+      <div class="content">
+        <section id="countdownSection" class="countdown-card">
+          <h2 style="margin:0">Countdown to Our Special Day</h2>
+          <p class="note">Please wait — the full celebration will appear when the countdown reaches zero.</p>
 
-  <div id="progressTracker">Progress: Memory Match 🖤 | Maze 🖤</div>
+          <div class="video-card">
+            <video id="countdownVideo" preload="metadata" playsinline autoplay muted>
+              <source src="202509051945.mp4" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+          </div>
 
-  <div id="gameSelection" class="row">
-    <button class="btn" id="btnMemory">Play Memory Match 🎴</button>
-    <button class="btn" id="btnMaze">Play Maze 🌀</button>
-  </div>
+          <div class="timer" role="timer" aria-live="polite" aria-atomic="true" id="timer">
+            <div class="time-segment">
+              <h2 id="days">--</h2>
+              <span>Days</span>
+            </div>
+            <div class="time-segment">
+              <h2 id="hours">--</h2>
+              <span>Hours</span>
+            </div>
+            <div class="time-segment">
+              <h2 id="minutes">--</h2>
+              <span>Minutes</span>
+            </div>
+            <div class="time-segment">
+              <h2 id="seconds">--</h2>
+              <span>Seconds</span>
+            </div>
+          </div>
 
-  <!-- Memory -->
-  <section id="memoryGame" class="game-container panel" aria-labelledby="memTitle">
-    <p class="title" id="memTitle">Find all the matching pairs! 🐱🐱</p>
-    <div id="memoryBoard" aria-label="Memory board"></div>
-    <div class="row" style="margin-top:10px">
-      <button class="btn" id="memRestart">Restart</button>
-      <button class="btn" id="memBack">Back to Menu</button>
+          <p class="note" style="margin-top:18px">
+            Target date (displayed in your browser's local time): <strong id="targetDisplay"></strong>
+          </p>
+        </section>
+
+        <section id="videoSection" class="hidden video-wrap" aria-hidden="true" aria-label="Video section">
+          <h2 style="margin:0">A little film for you</h2>
+          <p class="note">Watch this short clip. When it ends, our little game will begin. You can close it anytime to skip ahead.</p>
+
+          <div class="video-card" role="region" aria-label="Anniversary video">
+            <video id="annivVideo" preload="metadata" controls playsinline>
+              <source src="202509051945.mp4" type="video/mp4">
+              Your browser doesn't support the video tag.
+            </video>
+
+            <div class="video-controls-row">
+              <div style="display:flex;gap:8px;align-items:center">
+                <button class="btn" id="replayBtn" title="Replay">Replay</button>
+                <button class="btn ghost" id="muteBtn" title="Toggle mute">Mute</button>
+              </div>
+
+              <div>
+                <button class="btn" id="skipVideoBtn" aria-label="Close video and start the game">Close / Skip</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="gameSection" class="hidden game-wrap" aria-hidden="true" aria-label="Mini-game section">
+          <h2 style="margin:0">Mini Game — "Catch the Hearts"</h2>
+          <p class="instructions">
+            Instructions: Targets (hearts) will appear randomly inside the game area.
+            Click <strong id="requiredHitsDisplay">10</strong> targets within <strong id="gameTimerDisplay">25</strong> seconds to win.
+            Each hit scores 1 point. When you reach the required number of hits the celebration continues and a special QR code will appear.
+            If time runs out — try again!
+          </p>
+
+          <div class="hud" aria-hidden="false">
+            <div class="pill">Time left: <strong id="gameTime">25</strong>s</div>
+            <div class="pill">Hits: <strong id="hits">0</strong>/<span id="requiredHits">10</span></div>
+            <button class="btn ghost" id="startGameBtn">Start Game</button>
+            <button class="btn" id="resetGameBtn">Reset</button>
+          </div>
+
+          <div class="game-area" id="gameArea" aria-live="polite" aria-label="Game play area">
+            </div>
+
+          <p class="note" style="margin-top:6px">Tip: Move fast and tap accurately. On mobile, use your thumb—targets are sized for touch.</p>
+        </section>
+
+        </div>
+
+      <footer>
+        <div>Made with ❤️ — Here’s to us.</div>
+      
+      </footer>
     </div>
-  </section>
-
-  <!-- Maze -->
-  <section id="mazeGame" class="game-container panel" aria-labelledby="mazeTitle">
-    <p class="title" id="mazeTitle">Guide the 🦖 to the 🏁. Arrow keys or D-Pad.</p>
-    <div id="mazeWrap">
-      <canvas id="mazeCanvas" width="880" height="880" aria-label="Maze canvas" role="img"></canvas>
-    </div>
-    <div id="mazeControls" class="row">
-      <button class="btn" id="mazeNew">New Maze</button>
-      <button class="btn" id="mazeReset">Restart Position</button>
-      <button class="btn" id="mazeBack">Back to Menu</button>
-    </div>
-  </section>
-
-  <div class="win-message" id="winMessage" style="display:none;margin-top:14px">🎉 You beat both games! 🎉</div>
-
-  <!-- D-Pad -->
-  <div id="pad" aria-hidden="false">
-    <div class="padBtn blank"></div>
-    <button id="padUp" class="padBtn" aria-label="Up">▲</button>
-    <div class="padBtn blank"></div>
-    <button id="padLeft" class="padBtn" aria-label="Left">◀</button>
-    <div class="padBtn blank"></div>
-    <button id="padRight" class="padBtn" aria-label="Right">▶</button>
-    <div class="padBtn blank"></div>
-    <button id="padDown" class="padBtn" aria-label="Down">▼</button>
-    <div class="padBtn blank"></div>
   </div>
 
-  <!-- Generic congrats modal -->
-  <div id="congratsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="congratsTitle">
-    <div class="modalCard">
-      <div class="modalEmoji" id="congratsEmoji">🎉</div>
-      <div class="modalTitle" id="congratsTitle">Congratulations!</div>
-      <p class="modalMsg" id="congratsMsg">You did it!</p>
-      <div class="row">
-        <button class="btn" id="congratsPrimary">OK</button>
-        <button class="btn" id="congratsSecondary">Play Again</button>
-      </div>
+  <div id="qrModal" class="qr-modal hidden" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
+    <div class="qr-card" role="document">
+      <button class="close-x" id="qrCloseBtn" aria-label="Close QR dialog">✕</button>
+
+      <h3 id="qrTitle">You did it! 🎉</h3>
+      <p>Scan or click the QR to open the surprise link.</p>
+
+      <a id="qrLink" href="https://gifft.me/o/l/qgf095t59rq4mwtxghx2dzuk" target="_blank" rel="noopener noreferrer">
+        <div class="qr-img" role="img" aria-label="QR code - click to open link">
+          <img src="qrchimpX1024-removebg-preview.png" alt="Clickable QR code" width="170" height="170" style="display:block;border-radius:6px" />
+        </div>
+      </a>
+
+      <p style="margin-top:12px;color:var(--muted);font-size:13px">You can also tap the QR or the link above to open it in a new tab.</p>
     </div>
   </div>
 
-  <!-- Floating hearts generator -->
   <script>
-    function createHeart(){
-      const h=document.createElement('div'); h.className='heart'; h.textContent='💖';
-      h.style.left = Math.random()*100 + 'vw';
-      h.style.animationDuration = (5 + Math.random()*3) + 's';
-      document.body.appendChild(h);
-      setTimeout(()=>h.remove(),8000);
+    /*****************************************************************************
+     * Configuration block (edit these values as needed)
+     *
+     * IMPORTANT:
+     * - Replace `targetDateISO` with your desired anniversary date in ISO format including timezone offset.
+     * The spec asked for: August 24, 2025, at 12:00:00 PM PST.
+     * PST is generally UTC-8, so we use "2025-08-24T12:00:00-08:00" below.
+     * - Replace videoSrc with your personalized video URL(s).
+     * - Replace QR_LINK_HREF and QR_IMG_DATA with your final link (both href and QR image data param).
+     *
+     * Do NOT remove the code below — it expects those values.
+     *****************************************************************************/
+
+    // Countdown target:
+    // NOTE: Using an ISO string with explicit offset to ensure accurate moment across client timezones.
+    // Current requested target: Aug 24, 2025 12:00:00 PM PST -> "2025-08-24T12:00:00-08:00"
+    const targetDateISO = "2025-09-05T19:45:00+08:00"; // Updated to user's provided countdown time and location's timezone (Marikina City, Metro Manila, Philippines -> UTC+8).
+
+    // Video sources
+    const countdownVideoSrc = "202509051945.mp4";
+    const personalVideoSrc = "202509051945.mp4";
+
+    // QR placeholder - change both link and the embedded image data if you wish
+    const QR_LINK_HREF = "https://gifft.me/o/l/qgf095t59rq4mwtxghx2dzuk";
+    const QR_IMG_SRC = "qrchimpX1024-removebg-preview.png";
+
+    /*****************************************************************************
+     * DOM references
+     *****************************************************************************/
+    const daysEl = document.getElementById('days');
+    const hoursEl = document.getElementById('hours');
+    const minutesEl = document.getElementById('minutes');
+    const secondsEl = document.getElementById('seconds');
+    const targetDisplay = document.getElementById('targetDisplay');
+
+    const countdownSection = document.getElementById('countdownSection');
+    const videoSection = document.getElementById('videoSection');
+    const gameSection = document.getElementById('gameSection');
+
+    const countdownVideo = document.getElementById('countdownVideo');
+    const annivVideo = document.getElementById('annivVideo');
+    const replayBtn = document.getElementById('replayBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const skipVideoBtn = document.getElementById('skipVideoBtn');
+
+    const startGameBtn = document.getElementById('startGameBtn');
+    const resetGameBtn = document.getElementById('resetGameBtn');
+    const gameArea = document.getElementById('gameArea');
+    const hitsDisplay = document.getElementById('hits');
+    const requiredHitsDisplay = document.getElementById('requiredHitsDisplay');
+    const gameTimeDisplay = document.getElementById('gameTime');
+
+    const qrModal = document.getElementById('qrModal');
+    const qrLink = document.getElementById('qrLink');
+    const qrCloseBtn = document.getElementById('qrCloseBtn');
+    const qrImage = document.getElementById('qrLink').querySelector('img');
+
+
+    /*****************************************************************************
+     * 1) COUNTDOWN LOGIC
+     *
+     * - Parse the target date (explicit timezone included in ISO string).
+     * - Update every second.
+     * - When countdown reaches zero, hide countdown and reveal the video section.
+     *****************************************************************************/
+    const targetDate = new Date(targetDateISO);
+    targetDisplay.textContent = targetDate.toLocaleString(undefined, {
+      weekday: 'short', year:'numeric', month:'short', day:'numeric',
+      hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true
+    });
+
+    let countdownTimer = null;
+    function updateCountdown(){
+      const now = new Date();
+      const diff = targetDate.getTime() - now.getTime();
+
+      if (diff <= 0){
+        // Countdown finished
+        daysEl.textContent = "00";
+        hoursEl.textContent = "00";
+        minutesEl.textContent = "00";
+        secondsEl.textContent = "00";
+
+        clearInterval(countdownTimer);
+        revealVideo();
+        return;
+      }
+
+      const totalSeconds = Math.floor(diff / 1000);
+      const sec = totalSeconds % 60;
+      const totalMinutes = Math.floor(totalSeconds / 60);
+      const min = totalMinutes % 60;
+      const totalHours = Math.floor(totalMinutes / 60);
+      const hrs = totalHours % 24;
+      const days = Math.floor(totalHours / 24);
+
+      const pad = (n)=> String(n).padStart(2,'0');
+
+      daysEl.textContent = pad(days);
+      hoursEl.textContent = pad(hrs);
+      minutesEl.textContent = pad(min);
+      secondsEl.textContent = pad(sec);
     }
-    setInterval(createHeart,900);
-  </script>
 
-<script>
-  /* ---------------- state & helpers ---------------- */
-  let memoryWon=false, mazeWon=false;
-  const progressEl = document.getElementById('progressTracker');
-  function updateProgress(){
-    const mem = memoryWon ? '<span class="beat">💘</span>' : '🖤';
-    const mz = mazeWon ? '<span class="beat">💘</span>' : '🖤';
-    progressEl.innerHTML = `Progress: Memory Match ${mem} | Maze ${mz}`;
-    if(memoryWon && mazeWon){
-      document.getElementById('winMessage').style.display='block';
-    }
-  }
+    // Set countdown video source and start
+    (function setCountdownVideo() {
+      const source = countdownVideo.querySelector('source');
+      if (source) {
+        source.src = countdownVideoSrc;
+        countdownVideo.load();
+        countdownVideo.play();
+      } else {
+        countdownVideo.src = countdownVideoSrc;
+        countdownVideo.load();
+        countdownVideo.play();
+      }
+    })();
 
-  function showGame(id){
-    document.getElementById('gameSelection').style.display='none';
-    document.querySelectorAll('.game-container').forEach(el=>el.style.display='none');
-    document.getElementById(id).style.display='block';
-  }
-  function backToMenu(){
-    document.querySelectorAll('.game-container').forEach(el=>el.style.display='none');
-    document.getElementById('gameSelection').style.display='flex';
-  }
+    // Start countdown
+    updateCountdown();
+    countdownTimer = setInterval(updateCountdown, 1000);
 
-  /* ========== Congrats modal ========== */
-  const modal = document.getElementById('congratsModal');
-  const modalEmoji = document.getElementById('congratsEmoji');
-  const modalTitle = document.getElementById('congratsTitle');
-  const modalMsg = document.getElementById('congratsMsg');
-  const modalPrimary = document.getElementById('congratsPrimary');
-  const modalSecondary = document.getElementById('congratsSecondary');
+    /*****************************************************************************
+     * 2) VIDEO SECTION HANDLING
+     *
+     * When countdown completes, we swap the videos and reveal the main video section.
+     *****************************************************************************/
+    function revealVideo(){
+      // Hide the countdown section and its video
+      countdownSection.classList.add('hidden');
+      countdownSection.setAttribute('aria-hidden','true');
+      countdownVideo.pause();
 
-  function showCongrats({emoji='🎉',title='Congratulations!',msg='You did it!',primaryText='OK',onPrimary=()=>{},secondaryText='Play Again',onSecondary=()=>{}}={}){
-    modalEmoji.textContent = emoji;
-    modalTitle.textContent = title;
-    modalMsg.textContent = msg;
-    modalPrimary.textContent = primaryText;
-    modalSecondary.textContent = secondaryText;
-    modalPrimary.onclick = ()=>{ hideModal(); onPrimary(); };
-    modalSecondary.onclick = ()=>{ hideModal(); onSecondary(); };
-    modal.classList.add('show');
-  }
-  function hideModal(){ modal.classList.remove('show'); }
-  modal.addEventListener('click', (e)=>{ if(e.target===modal) hideModal(); });
+      // Show the personal video section
+      videoSection.classList.remove('hidden');
+      videoSection.setAttribute('aria-hidden','false');
 
-  /* -------- Memory Match (5 pairs = 10 cards) -------- */
-  const allSymbols = ['🐱','🐶','🐰','🐼','🦊','🐻','🐨','🐯','🦁','🐮','🐷','🐸'];
-  const memoryBoard = document.getElementById('memoryBoard');
-  let firstCard = null, memLock = false;
+      // Set the source of the main video player and attempt to autoplay
+      annivVideo.querySelector('source').src = personalVideoSrc;
+      annivVideo.load();
+      annivVideo.play();
 
-  function buildCard(sym){
-    const d = document.createElement('div');
-    d.className = 'card hidden';
-    d.dataset.symbol = sym;
-    d.textContent = sym;
-    return d;
-  }
-
-  function resetMemory(){
-    firstCard = null; memLock = false; memoryWon = false; updateProgress();
-    memoryBoard.innerHTML = '';
-    const picks = allSymbols.sort(()=>Math.random()-.5).slice(0,5); // 5 pairs
-    const deck = [...picks, ...picks].sort(()=>Math.random()-.5);
-    deck.forEach(sym => memoryBoard.appendChild(buildCard(sym)));
-    memoryBoard.querySelectorAll('.card').forEach(card=>{
-      card.onclick = ()=>{
-        if(memLock || !card.classList.contains('hidden')) return;
-        card.classList.remove('hidden');
-        card.classList.add('revealed');
-        setTimeout(()=>card.classList.remove('revealed'), 260);
-        if(!firstCard){ firstCard = card; return; }
-        if(firstCard.dataset.symbol === card.dataset.symbol){
-          firstCard = null;
-          // check win
-          if([...memoryBoard.children].every(c=>!c.classList.contains('hidden'))){
-            memoryWon = true; updateProgress();
-            showCongrats({
-              emoji:'💖',
-              title:'Memory Master!',
-              msg:'You matched all 5 pairs! Want to try the maze now?',
-              primaryText:'Play Maze 🌀',
-              onPrimary: ()=> showGame('mazeGame'),
-              secondaryText:'Replay Memory',
-              onSecondary: ()=> resetMemory()
-            });
-          }
-        } else {
-          memLock = true;
-          setTimeout(()=>{
-            firstCard.classList.add('hidden');
-            card.classList.add('hidden');
-            firstCard = null; memLock = false;
-          }, 650);
+      try {
+        annivVideo.muted = true;
+        const playPromise = annivVideo.play();
+        if (playPromise !== undefined) {
+          playPromise.then(()=> {
+            muteBtn.textContent = annivVideo.muted ? 'Unmute' : 'Mute';
+          }).catch((err)=>{
+            annivVideo.pause();
+          });
         }
+      } catch(e){
+        // ignore
+      }
+    }
+
+    // Video control buttons
+    replayBtn.addEventListener('click', ()=>{
+      annivVideo.currentTime = 0;
+      annivVideo.play().catch(()=>{ /* autoplay blocked */});
+    });
+
+    muteBtn.addEventListener('click', ()=>{
+      annivVideo.muted = !annivVideo.muted;
+      muteBtn.textContent = annivVideo.muted ? 'Unmute' : 'Mute';
+    });
+
+    // If user clicks the skip/close button, stop video and reveal game
+    skipVideoBtn.addEventListener('click', ()=>{
+      annivVideo.pause();
+      annivVideo.currentTime = 0;
+      revealGame();
+    });
+
+    // When the video ends naturally, reveal the game
+    annivVideo.addEventListener('ended', ()=>{
+      revealGame();
+    });
+
+    /*****************************************************************************
+     * 3) MINI-GAME IMPLEMENTATION ("Catch the Hearts")
+     *
+     * - Game parameters:
+     * requiredHits: number of targets user must click to win
+     * gameDuration: seconds allowed
+     * - Targets spawn with random positions inside the playfield.
+     * - On successful count, show QR modal.
+     *****************************************************************************/
+    const gameConfig = {
+      requiredHits: 10,
+      gameDuration: 25,
+      spawnInterval: 700,
+      targetLifetime: 1500,
+      maxTargetsOnScreen: 3
+    };
+
+    document.getElementById('requiredHits').textContent = gameConfig.requiredHits;
+    requiredHitsDisplay.textContent = gameConfig.requiredHits;
+    document.getElementById('gameTimerDisplay').textContent = gameConfig.gameDuration;
+
+    let hits = 0;
+    let gameTimeLeft = gameConfig.gameDuration;
+    let gameInterval = null;
+    let spawnIntervalId = null;
+    let gameActive = false;
+
+    function createTarget(){
+      if (gameArea.querySelectorAll('.target').length >= gameConfig.maxTargetsOnScreen) return;
+
+      const t = document.createElement('div');
+      t.className = 'target';
+      t.setAttribute('role','button');
+      t.setAttribute('tabindex','0');
+      t.setAttribute('aria-label','Target');
+      t.style.background = 'linear-gradient(135deg,' + 'rgba(255,107,107,0.95)' + ', rgba(255,160,160,0.92))';
+      t.innerHTML = '❤';
+
+      const rect = gameArea.getBoundingClientRect();
+      const pad = 20;
+      const maxX = Math.max(0, rect.width - 64 - pad);
+      const maxY = Math.max(0, rect.height - 64 - pad);
+      const x = Math.floor(Math.random() * maxX) + pad/2;
+      const y = Math.floor(Math.random() * maxY) + pad/2;
+      t.style.left = x + 'px';
+      t.style.top = y + 'px';
+
+      const onHit = (e)=>{
+        e.stopPropagation();
+        if (!gameActive) return;
+        t.style.transform = 'scale(0.85)';
+        setTimeout(()=> {
+          if (t && t.parentNode) t.parentNode.removeChild(t);
+        }, 80);
+        hits += 1;
+        hitsDisplay.textContent = hits;
+        checkWinCondition();
       };
-    });
-  }
 
-  /* -------- Maze (easier path but denser walls) -------- */
-  const canvas = document.getElementById('mazeCanvas');
-  const ctx = canvas.getContext('2d');
-
-  function fitCanvas(){ 
-    const dpr = window.devicePixelRatio || 1;
-    const r = canvas.getBoundingClientRect();
-    canvas.width = Math.round(r.width * dpr);
-    canvas.height = Math.round(r.height * dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-  }
-  new ResizeObserver(fitCanvas).observe(canvas);
-  fitCanvas();
-
-  let N = 10; // smaller grid -> shorter solution path (easier)
-  const directions = [[0,-1],[1,0],[0,1],[-1,0]];
-  let H, V; // horizontal/vertical walls (true = wall present)
-  let start = {x:0,y:0}, goal = {x:N-1,y:N-1};
-
-  function carveMaze(){
-    // Perfect maze via DFS (start with all walls up)
-    H = Array.from({length:N+1}, ()=> Array(N).fill(true));
-    V = Array.from({length:N}, ()=> Array(N+1).fill(true));
-    const visited = Array.from({length:N}, ()=> Array(N).fill(false));
-    function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; }
-    (function dfs(x,y){
-      visited[y][x]=true;
-      shuffle(directions.slice()).forEach(([dx,dy])=>{
-        const nx=x+dx, ny=y+dy;
-        if(nx>=0&&ny>=0&&nx<N&&ny<N && !visited[ny][nx]){
-          if(dx===1) V[y][x+1]=false; if(dx===-1) V[y][x]=false;
-          if(dy===1) H[y+1][x]=false; if(dy===-1) H[y][x]=false;
-          dfs(nx,ny);
-        }
+      t.addEventListener('click', onHit);
+      t.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') { onHit(ev); }
       });
-    })(0,0);
 
-    // Find a shortest path from start to goal (BFS)
-    const prev = Array.from({length:N}, ()=> Array(N).fill(null));
-    const q=[[start.x,start.y]];
-    const seen = Array.from({length:N}, ()=> Array(N).fill(false));
-    seen[start.y][start.x]=true;
+      gameArea.appendChild(t);
 
-    while(q.length){
-      const [x,y]=q.shift();
-      if(x===goal.x && y===goal.y) break;
-      for(const [dx,dy] of directions){
-        const nx=x+dx, ny=y+dy;
-        if(nx<0||ny<0||nx>=N||ny>=N) continue;
-        // Can we move between (x,y) -> (nx,ny)?
-        if(dx===1 && V[y][x+1]) continue;
-        if(dx===-1 && V[y][x]) continue;
-        if(dy===1 && H[y+1][x]) continue;
-        if(dy===-1 && H[y][x]) continue;
-        if(!seen[ny][nx]){
-          seen[ny][nx]=true;
-          prev[ny][nx]=[x,y];
-          q.push([nx,ny]);
+      setTimeout(()=>{
+        if (t && t.parentNode) t.parentNode.removeChild(t);
+      }, gameConfig.targetLifetime);
+    }
+
+    function startGame(){
+      if (gameActive) return;
+      gameActive = true;
+      hits = 0;
+      gameTimeLeft = gameConfig.gameDuration;
+      hitsDisplay.textContent = hits;
+      gameTimeDisplay.textContent = gameTimeLeft;
+      clearGameAreaTargets();
+
+      spawnIntervalId = setInterval(createTarget, gameConfig.spawnInterval);
+      createTarget();
+      createTarget();
+
+      gameInterval = setInterval(()=>{
+        gameTimeLeft -= 1;
+        gameTimeDisplay.textContent = gameTimeLeft;
+        if (gameTimeLeft <= 0){
+          endGame(false);
         }
+      }, 1000);
+    }
+
+    function endGame(won){
+      gameActive = false;
+      clearInterval(gameInterval);
+      clearInterval(spawnIntervalId);
+      spawnIntervalId = null;
+      gameInterval = null;
+      clearGameAreaTargets();
+
+      if (won){
+        setTimeout(()=> {
+          showQRModal();
+        }, 500);
+      } else {
+        flashGameArea();
       }
     }
-    // Reconstruct path set
-    const onPath = Array.from({length:N}, ()=> Array(N).fill(false));
-    let cx=goal.x, cy=goal.y;
-    onPath[cy][cx]=true;
-    while(prev[cy][cx]){
-      const [px,py]=prev[cy][cx];
-      onPath[py][px]=true;
-      cx=px; cy=py;
+
+    function clearGameAreaTargets(){
+      const nodes = Array.from(gameArea.querySelectorAll('.target'));
+      nodes.forEach(n => n.remove());
     }
 
-    // Make maze look denser by closing some NON-path openings.
-    // This keeps the solution path open and the puzzle solvable/easier.
-    const closableEdges=[];
-    // vertical openings (V[y][x] == false means opening between (x-1,y) and (x,y))
-    for(let y=0;y<N;y++){
-      for(let x=1;x<N;x++){
-        if(!V[y][x]){ // opening
-          const aX=x-1,aY=y,bX=x,bY=y;
-          if(!(onPath[aY][aX] && onPath[bY][bX])){ // don't touch path edge
-            closableEdges.push({type:'V', y, x});
-          }
-        }
+    function checkWinCondition(){
+      if (hits >= gameConfig.requiredHits){
+        endGame(true);
       }
     }
-    // horizontal openings (H[y][x] == false means opening between (x,y-1) and (x,y))
-    for(let y=1;y<N;y++){
-      for(let x=0;x<N;x++){
-        if(!H[y][x]){
-          const aX=x,aY=y-1,bX=x,bY=y;
-          if(!(onPath[aY][aX] && onPath[bY][bX])){
-            closableEdges.push({type:'H', y, x});
-          }
-        }
-      }
+
+    function resetGame(){
+      hits = 0;
+      gameTimeLeft = gameConfig.gameDuration;
+      hitsDisplay.textContent = hits;
+      gameTimeDisplay.textContent = gameTimeLeft;
+      clearInterval(gameInterval);
+      clearInterval(spawnIntervalId);
+      spawnIntervalId = null;
+      gameInterval = null;
+      gameActive = false;
+      clearGameAreaTargets();
     }
-    // Close ~35% of those edges to increase visual wall density
-    const target = Math.floor(closableEdges.length*0.35);
-    for(let i=0;i<target;i++){
-      const idx = Math.floor(Math.random()*closableEdges.length);
-      const e = closableEdges.splice(idx,1)[0];
-      if(e.type==='V') V[e.y][e.x]=true; else H[e.y][e.x]=true;
+
+    function flashGameArea(){
+      const original = gameArea.style.boxShadow;
+      gameArea.style.boxShadow = '0 0 0 4px rgba(255,107,107,0.12)';
+      setTimeout(()=> {
+        gameArea.style.boxShadow = original;
+      }, 600);
     }
-  }
 
-  // player & movement
-  let player = {x:0,y:0,fx:0,fy:0}, moving=false, moveStart=0, fromX=0, fromY=0, toX=0, toY=0;
-  const MOVE_MS = 140;
-
-  function canMove(dx,dy){
-    const nx=player.x+dx, ny=player.y+dy;
-    if(nx<0||ny<0||nx>=N||ny>=N) return false;
-    if(dx===1 && V[player.y][player.x+1]) return false;
-    if(dx===-1 && V[player.y][player.x]) return false;
-    if(dy===1 && H[player.y+1][player.x]) return false;
-    if(dy===-1 && H[player.y][player.x]) return false;
-    return true;
-  }
-  function tryMove(dx,dy){
-    if(moving || mazeWon) return;
-    if(!canMove(dx,dy)) return;
-    const nx=player.x+dx, ny=player.y+dy;
-    moving=true; moveStart=performance.now();
-    fromX=player.x; fromY=player.y; toX=nx; toY=ny;
-    player.x=nx; player.y=ny;
-    if(navigator.vibrate) navigator.vibrate(12);
-  }
-
-  function drawMaze(){
-    const cs = canvas.getBoundingClientRect().width / N;
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.lineWidth = Math.max(2, Math.floor(cs*0.05)); ctx.strokeStyle = '#8b0000';
-    ctx.beginPath();
-    ctx.rect(0,0,N*cs,N*cs);
-    for(let y=0;y<=N;y++){
-      for(let x=0;x<N;x++){ if(H[y][x]){ ctx.moveTo(x*cs,y*cs); ctx.lineTo((x+1)*cs,y*cs); } }
-    }
-    for(let y=0;y<N;y++){
-      for(let x=0;x<=N;x++){ if(V[y][x]){ ctx.moveTo(x*cs,y*cs); ctx.lineTo(x*cs,(y+1)*cs); } }
-    }
-    ctx.stroke();
-
-    // goal
-    ctx.font = `${Math.floor(cs*0.6)}px system-ui, 'Apple Color Emoji','Segoe UI Emoji'`;
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('🏁', goal.x*cs + cs/2, goal.y*cs + cs/2);
-
-    // player (smooth)
-    const px = player.fx*cs + cs/2;
-    const py = player.fy*cs + cs/2 + (moving ? Math.sin(performance.now()/90)*cs*0.06 : 0);
-    ctx.fillText('🦖', px, py);
-  }
-
-  function step(now){
-    if(moving){
-      const t=Math.min(1,(now-moveStart)/MOVE_MS);
-      const e = t<.5 ? 2*t*t : -1+(4-2*t)*t;
-      player.fx = fromX + (toX-fromX)*e;
-      player.fy = fromY + (toY-fromY)*e;
-      if(t>=1){ moving=false; player.fx=player.x; player.fy=player.y; afterArrive(); }
-    }
-    drawMaze();
-    requestAnimationFrame(step);
-  }
-
-  function afterArrive(){
-    if(player.x===goal.x && player.y===goal.y){
-      mazeWon=true; updateProgress();
-      showCongrats({
-        emoji:'🚩', title:'Maze Conquered!', msg:'You found the goal! Try a new layout or replay.',
-        primaryText:'New Maze', onPrimary:()=> newMaze(),
-        secondaryText:'Back to Menu', onSecondary:()=> backToMenu()
-      });
-    }
-  }
-
-  function resetMaze(){ player={x:start.x,y:start.y,fx:start.x,fy:start.y}; mazeWon=false; updateProgress(); drawMaze(); }
-
-  function newMaze(){
-    carveMaze();
-    start={x:0,y:0}; goal={x:N-1,y:N-1};
-    resetMaze();
-  }
-
-  /* Keyboard & D-Pad */
-  document.addEventListener('keydown',(e)=>{
-    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D'].includes(e.key)) e.preventDefault();
-    if(e.key==='ArrowUp' || e.key==='w' || e.key==='W') tryMove(0,-1);
-    if(e.key==='ArrowDown' || e.key==='s' || e.key==='S') tryMove(0,1);
-    if(e.key==='ArrowLeft' || e.key==='a' || e.key==='A') tryMove(-1,0);
-    if(e.key==='ArrowRight' || e.key==='d' || e.key==='D') tryMove(1,0);
-  });
-
-  function pad(el,dx,dy){
-    const fire = ()=> tryMove(dx,dy);
-    el.addEventListener('click',fire);
-    el.addEventListener('touchstart', (ev)=>{ ev.preventDefault(); fire(); }, {passive:false});
-  }
-  pad(document.getElementById('padUp'),0,-1);
-  pad(document.getElementById('padDown'),0,1);
-  pad(document.getElementById('padLeft'),-1,0);
-  pad(document.getElementById('padRight'),1,0);
-
-  /* init */
-  newMaze();
-  requestAnimationFrame(step);
-
-  /* ========== UI wiring ========== */
-  // menu buttons
-  document.getElementById('btnMemory').onclick = ()=> showGame('memoryGame');
-  document.getElementById('btnMaze').onclick = ()=> showGame('mazeGame');
-  document.getElementById('memBack').onclick = backToMenu;
-  document.getElementById('memRestart').onclick = resetMemory;
-  document.getElementById('mazeBack').onclick = backToMenu;
-  document.getElementById('mazeNew').onclick = newMaze;
-  document.getElementById('mazeReset').onclick = resetMaze;
-
-  /* Initialize memory board */
-  resetMemory();
-</script>
-
-<!-- === One-time splash logic (audio-safe on mobile) === -->
-<script>
-  const tapOverlay = document.getElementById('tapOverlay');
-  const introOverlay = document.getElementById('introVideoOverlay');
-  const introVideo = document.getElementById('introVideo');
-  const startBtn = document.getElementById('startBtn');
-
-  function closeIntro(){
-    introOverlay.classList.add('fade-out');
-    setTimeout(()=> introOverlay.remove(), 1000);
-    localStorage.setItem('introPlayed', 'true');
-  }
-
-  if(!localStorage.getItem('introPlayed')){
-    tapOverlay.style.display = 'flex';
-    startBtn.addEventListener('click', () => {
-      tapOverlay.remove();
-      introOverlay.style.display = 'flex';
-      // play with sound after a user gesture (mobile-friendly)
-      const playPromise = introVideo.play();
-      if(playPromise && typeof playPromise.then==='function'){
-        playPromise.catch(()=>{/* fallback ignored; user can tap again if needed */});
-      }
+    startGameBtn.addEventListener('click', ()=> {
+      if (gameActive) return;
+      startGame();
     });
-    introVideo.addEventListener('ended', closeIntro);
-  }
-</script>
+
+    resetGameBtn.addEventListener('click', ()=> {
+      resetGame();
+    });
+
+    gameArea.addEventListener('click', ()=> {
+      if (gameActive) createTarget();
+    });
+
+    /*****************************************************************************
+     * 4) FINAL: QR POPUP DIALOG
+     *
+     * - When user wins, show modal with QR code (clickable).
+     *****************************************************************************/
+    function showQRModal(){
+      qrLink.href = QR_LINK_HREF;
+      qrImage.src = QR_IMG_SRC;
+      qrImage.alt = 'QR code (click to open ' + QR_LINK_HREF + ')';
+
+      qrModal.classList.remove('hidden');
+      qrModal.setAttribute('aria-hidden','false');
+    }
+
+    function hideQRModal(){
+      qrModal.classList.add('hidden');
+      qrModal.setAttribute('aria-hidden','true');
+    }
+
+    qrCloseBtn.addEventListener('click', hideQRModal);
+    qrModal.addEventListener('click', (e)=>{
+      if (e.target === qrModal) hideQRModal();
+    });
+
+    /*****************************************************************************
+     * 5) SEQUENTIAL TRANSITIONS
+     *
+     * We must ensure each section is only accessible after previous is completed.
+     *****************************************************************************/
+    function revealGame(){
+      videoSection.classList.add('hidden');
+      videoSection.setAttribute('aria-hidden','true');
+      gameSection.classList.remove('hidden');
+      gameSection.setAttribute('aria-hidden','false');
+      startGameBtn.focus();
+    }
+  </script>
 </body>
 </html>
