@@ -9,15 +9,15 @@
 
   <style>
     /* ===========
-        THEME & LAYOUT
-        Dark, elegant, modern aesthetic with one accent color.
-        Replace color variables if you want a different accent.
-        =========== */
+       THEME & LAYOUT
+       Dark, elegant, modern aesthetic with one accent color.
+       Replace color variables if you want a different accent.
+       =========== */
     :root{
-      --bg:#0b0d10;          /* main background (very dark) */
-      --panel:#0f1316;        /* slightly lighter panels */
-      --muted:#9aa5b1;        /* muted text */
-      --accent:#ff6b6b;        /* accent color (replace to taste) */
+      --bg:#0b0d10;      /* main background (very dark) */
+      --panel:#0f1316;    /* slightly lighter panels */
+      --muted:#9aa5b1;    /* muted text */
+      --accent:#ff6b6b;    /* accent color (replace to taste) */
       --glass: rgba(255,255,255,0.03);
       --radius:16px;
       --max-width:1100px;
@@ -278,7 +278,19 @@
       </header>
 
       <div class="content">
-        <section id="countdownSection" class="countdown-card">
+        <section id="introVideoSection" class="video-wrap" aria-hidden="false" aria-label="Intro video section">
+            <h2 style="margin:0">A message for you</h2>
+            <p class="note">Please watch this first video before the countdown begins.</p>
+
+            <div class="video-card">
+                <video id="introVideo" preload="metadata" playsinline autoplay muted>
+                    <source src="202509110246.mp4" type="video/mp4">
+                    Your browser doesn't support the video tag.
+                </video>
+            </div>
+        </section>
+
+        <section id="countdownSection" class="countdown-card hidden">
           <h2 style="margin:0">Countdown to Our Special Day</h2>
           <p class="note">Please wait — the full celebration will appear when the countdown reaches zero.</p>
 
@@ -353,12 +365,12 @@
           </div>
 
           <div class="game-area" id="gameArea" aria-live="polite" aria-label="Game play area">
-            </div>
+          </div>
 
           <p class="note" style="margin-top:6px">Tip: Move fast and tap accurately. On mobile, use your thumb—targets are sized for touch.</p>
         </section>
 
-        </div>
+      </div>
 
       <footer>
         <div>Made with ❤️ — Here’s to us.</div>
@@ -404,6 +416,7 @@
     const targetDateISO = "2025-09-05T19:45:00+08:00"; // Updated to user's provided countdown time and location's timezone (Marikina City, Metro Manila, Philippines -> UTC+8).
 
     // Video sources
+    const preCountdownVideoSrc = "202509110246.mp4"; // This is the new video you wanted to add
     const countdownVideoSrc = "202509051945.mp4";
     const personalVideoSrc = "202509051945.mp4";
 
@@ -420,10 +433,12 @@
     const secondsEl = document.getElementById('seconds');
     const targetDisplay = document.getElementById('targetDisplay');
 
+    const introVideoSection = document.getElementById('introVideoSection');
     const countdownSection = document.getElementById('countdownSection');
     const videoSection = document.getElementById('videoSection');
     const gameSection = document.getElementById('gameSection');
 
+    const introVideo = document.getElementById('introVideo');
     const countdownVideo = document.getElementById('countdownVideo');
     const annivVideo = document.getElementById('annivVideo');
     const replayBtn = document.getElementById('replayBtn');
@@ -442,73 +457,108 @@
     const qrCloseBtn = document.getElementById('qrCloseBtn');
     const qrImage = document.getElementById('qrLink').querySelector('img');
 
-
     /*****************************************************************************
-     * 1) COUNTDOWN LOGIC
+     * 1) INITIAL VIDEO HANDLING
      *
-     * - Parse the target date (explicit timezone included in ISO string).
-     * - Update every second.
-     * - When countdown reaches zero, hide countdown and reveal the video section.
+     * - Handle the new pre-countdown video first.
+     * - When it ends, hide it and start the countdown process.
      *****************************************************************************/
-    const targetDate = new Date(targetDateISO);
-    targetDisplay.textContent = targetDate.toLocaleString(undefined, {
-      weekday: 'short', year:'numeric', month:'short', day:'numeric',
-      hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true
-    });
-
-    let countdownTimer = null;
-    function updateCountdown(){
-      const now = new Date();
-      const diff = targetDate.getTime() - now.getTime();
-
-      if (diff <= 0){
-        // Countdown finished
-        daysEl.textContent = "00";
-        hoursEl.textContent = "00";
-        minutesEl.textContent = "00";
-        secondsEl.textContent = "00";
-
-        clearInterval(countdownTimer);
-        revealVideo();
-        return;
-      }
-
-      const totalSeconds = Math.floor(diff / 1000);
-      const sec = totalSeconds % 60;
-      const totalMinutes = Math.floor(totalSeconds / 60);
-      const min = totalMinutes % 60;
-      const totalHours = Math.floor(totalMinutes / 60);
-      const hrs = totalHours % 24;
-      const days = Math.floor(totalHours / 24);
-
-      const pad = (n)=> String(n).padStart(2,'0');
-
-      daysEl.textContent = pad(days);
-      hoursEl.textContent = pad(hrs);
-      minutesEl.textContent = pad(min);
-      secondsEl.textContent = pad(sec);
+    function startIntroVideo() {
+        introVideo.querySelector('source').src = preCountdownVideoSrc;
+        introVideo.load();
+        try {
+            introVideo.play().catch(e => {
+                // Autoplay blocked, wait for user interaction to start.
+                // For now, we'll just log this and proceed.
+                console.error("Autoplay of intro video failed. User must manually play it.");
+                revealCountdown(); // Fallback to showing countdown immediately if intro video can't play
+            });
+        } catch (e) {
+            console.error("Error playing intro video:", e);
+            revealCountdown(); // Fallback
+        }
     }
 
-    // Set countdown video source and start
-    (function setCountdownVideo() {
-      const source = countdownVideo.querySelector('source');
-      if (source) {
-        source.src = countdownVideoSrc;
-        countdownVideo.load();
-        countdownVideo.play();
-      } else {
-        countdownVideo.src = countdownVideoSrc;
-        countdownVideo.load();
-        countdownVideo.play();
-      }
-    })();
-
-    // Start countdown
-    updateCountdown();
-    countdownTimer = setInterval(updateCountdown, 1000);
+    introVideo.addEventListener('ended', () => {
+        revealCountdown();
+    });
+    introVideo.addEventListener('error', (e) => {
+        console.error("Intro video loading error:", e);
+        revealCountdown(); // Proceed to countdown if intro video fails to load
+    });
 
     /*****************************************************************************
-     * 2) VIDEO SECTION HANDLING
+     * 2) COUNTDOWN LOGIC
+     *
+     * - This is a modified version of the original logic.
+     * - We now call this function after the intro video has finished.
+     *****************************************************************************/
+    function revealCountdown() {
+        introVideoSection.classList.add('hidden');
+        introVideoSection.setAttribute('aria-hidden', 'true');
+        countdownSection.classList.remove('hidden');
+        countdownSection.setAttribute('aria-hidden', 'false');
+
+        const targetDate = new Date(targetDateISO);
+        targetDisplay.textContent = targetDate.toLocaleString(undefined, {
+            weekday: 'short', year:'numeric', month:'short', day:'numeric',
+            hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true
+        });
+
+        let countdownTimer = null;
+        function updateCountdown(){
+            const now = new Date();
+            const diff = targetDate.getTime() - now.getTime();
+
+            if (diff <= 0){
+                // Countdown finished
+                daysEl.textContent = "00";
+                hoursEl.textContent = "00";
+                minutesEl.textContent = "00";
+                secondsEl.textContent = "00";
+
+                clearInterval(countdownTimer);
+                revealVideo();
+                return;
+            }
+
+            const totalSeconds = Math.floor(diff / 1000);
+            const sec = totalSeconds % 60;
+            const totalMinutes = Math.floor(totalSeconds / 60);
+            const min = totalMinutes % 60;
+            const totalHours = Math.floor(totalMinutes / 60);
+            const hrs = totalHours % 24;
+            const days = Math.floor(totalHours / 24);
+
+            const pad = (n)=> String(n).padStart(2,'0');
+
+            daysEl.textContent = pad(days);
+            hoursEl.textContent = pad(hrs);
+            minutesEl.textContent = pad(min);
+            secondsEl.textContent = pad(sec);
+        }
+
+        // Set countdown video source and start
+        (function setCountdownVideo() {
+            const source = countdownVideo.querySelector('source');
+            if (source) {
+                source.src = countdownVideoSrc;
+                countdownVideo.load();
+                countdownVideo.play();
+            } else {
+                countdownVideo.src = countdownVideoSrc;
+                countdownVideo.load();
+                countdownVideo.play();
+            }
+        })();
+
+        // Start countdown
+        updateCountdown();
+        countdownTimer = setInterval(updateCountdown, 1000);
+    }
+
+    /*****************************************************************************
+     * 3) VIDEO SECTION HANDLING
      *
      * When countdown completes, we swap the videos and reveal the main video section.
      *****************************************************************************/
@@ -566,7 +616,7 @@
     });
 
     /*****************************************************************************
-     * 3) MINI-GAME IMPLEMENTATION ("Catch the Hearts")
+     * 4) MINI-GAME IMPLEMENTATION ("Catch the Hearts")
      *
      * - Game parameters:
      * requiredHits: number of targets user must click to win
@@ -721,7 +771,7 @@
     });
 
     /*****************************************************************************
-     * 4) FINAL: QR POPUP DIALOG
+     * 5) FINAL: QR POPUP DIALOG
      *
      * - When user wins, show modal with QR code (clickable).
      *****************************************************************************/
@@ -745,7 +795,7 @@
     });
 
     /*****************************************************************************
-     * 5) SEQUENTIAL TRANSITIONS
+     * 6) SEQUENTIAL TRANSITIONS
      *
      * We must ensure each section is only accessible after previous is completed.
      *****************************************************************************/
@@ -756,6 +806,9 @@
       gameSection.setAttribute('aria-hidden','false');
       startGameBtn.focus();
     }
+
+    // Start the whole process by playing the intro video
+    startIntroVideo();
   </script>
 </body>
 </html>
